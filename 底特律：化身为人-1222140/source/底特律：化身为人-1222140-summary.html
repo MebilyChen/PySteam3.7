@@ -12,7 +12,7 @@
 	<link href="https://store.akamai.steamstatic.com/public/shared/css/motiva_sans.css?v=Rc2hpzg2Ex3T&amp;l=english" rel="stylesheet" type="text/css" >
 <link href="https://store.akamai.steamstatic.com/public/shared/css/shared_global.css?v=apSgQuhzBLMP&amp;l=english" rel="stylesheet" type="text/css" >
 <link href="https://store.akamai.steamstatic.com/public/shared/css/buttons.css?v=6PFqex5UPprb&amp;l=english" rel="stylesheet" type="text/css" >
-<link href="https://store.akamai.steamstatic.com/public/css/v6/store.css?v=OIoLBecEBjCw&amp;l=english" rel="stylesheet" type="text/css" >
+<link href="https://store.akamai.steamstatic.com/public/css/v6/store.css?v=1XWqa1Ac4wCn&amp;l=english" rel="stylesheet" type="text/css" >
 <link href="https://store.akamai.steamstatic.com/public/css/styles_linux.css?v=.srZuTsIiIsbq" rel="stylesheet" type="text/css" >
 <link href="https://store.akamai.steamstatic.com/public/shared/css/store_game_shared.css?v=3762vFgJovj_&amp;l=english" rel="stylesheet" type="text/css" >
 <link href="https://store.akamai.steamstatic.com/public/css/v6/game.css?v=QgQbsPHbydOY&amp;l=english" rel="stylesheet" type="text/css" >
@@ -81,7 +81,7 @@
 	
 	
 	</head>
-<body class="v6 app game_bg responsive_page ">
+<body class="v6 app game_bg currency_wide responsive_page ">
 
 
 <div class="responsive_page_frame with_header">
@@ -752,7 +752,7 @@
 						if( $J('#searchform').length > 0 )
 						{
 							// default search support where the web page includes the search edit control
-							EnableSearchSuggestions( $J('#searchform')[0].elements['term'], '1_agecheck_agecheck_', 'HK', 1, 'english', g_rgUserPreferences, '18655436' );
+							EnableSearchSuggestions( $J('#searchform')[0].elements['term'], '1_agecheck_agecheck_', 'CA', 1, 'english', g_rgUserPreferences, '18666306' );
 						}
 						else 
 						{
@@ -782,8 +782,8 @@
 		</script>
 	<script type="text/javascript">
 	var g_AccountID = 0;
-	var g_sessionID = "52b5b9ba6f28ed43f042acfd";
-	var g_ServerTime = 1683077616;
+	var g_sessionID = "39965e25333f3170f6343291";
+	var g_ServerTime = 1683144697;
 
 	$J( InitMiniprofileHovers( 'https%3A%2F%2Fstore.steampowered.com%2F' ) );
 
@@ -791,9 +791,9 @@
 			GStoreItemData.AddNavParams({
 			__page_default: "1_agecheck_agecheck_",
 			storemenu_recommendedtags: "1_agecheck_agecheck__17"		});
-		GDynamicStore.Init( 0, false, "", {"primary_language":null,"secondary_languages":null,"platform_windows":null,"platform_mac":null,"platform_linux":null,"timestamp_updated":null,"hide_store_broadcast":null,"review_score_preference":null,"timestamp_content_descriptor_preferences_updated":null,"provide_deck_feedback":null,"additional_languages":null}, 'HK',
+		GDynamicStore.Init( 0, false, "", {"primary_language":null,"secondary_languages":null,"platform_windows":null,"platform_mac":null,"platform_linux":null,"timestamp_updated":null,"hide_store_broadcast":null,"review_score_preference":null,"timestamp_content_descriptor_preferences_updated":null,"provide_deck_feedback":null,"additional_languages":null}, 'CA',
 			{"bNoDefaultDescriptors":false} );
-		GStoreItemData.SetCurrencyFormatter( function( nValueInCents, bWholeUnitsOnly ) { var fmt = function( nValueInCents, bWholeUnitsOnly ) {	var format = v_numberformat( nValueInCents / 100, bWholeUnitsOnly ? 0 : 2, ".", ","); return format; };var strNegativeSymbol = '';return strNegativeSymbol + "HK$ " + fmt( nValueInCents, bWholeUnitsOnly );} );
+		GStoreItemData.SetCurrencyFormatter( function( nValueInCents, bWholeUnitsOnly ) { var fmt = function( nValueInCents, bWholeUnitsOnly ) {	var format = v_numberformat( nValueInCents / 100, bWholeUnitsOnly ? 0 : 2, ".", ","); return format; };var strNegativeSymbol = '';return strNegativeSymbol + "CDN$ " + fmt( nValueInCents, bWholeUnitsOnly );} );
 		GStoreItemData.SetCurrencyMinPriceIncrement( 1 );
 	</script>
 

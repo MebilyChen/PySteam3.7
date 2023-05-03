@@ -3,6 +3,7 @@ import os
 # import time
 # import csv
 # import imageio.v2 as imageio
+import xml.sax
 import numpy as np
 import requests
 import datetime
@@ -30,20 +31,23 @@ import main
 # 有的游戏因为标题里带了:和其他一些奇葩字符导致建不了文件夹，更多奇葩字符有待修补。
 # 如果词云里有重复词语，可能是因为相同词语连续大量出现(刷评论)，可以人工清洗再分析词云。
 # python3.7联网注意加代理。
+# 默认读取每个玩家游戏库前三的游戏标签数据（读取一个用户下的一个游戏标签数据要4s左右），前十的游戏名。
+# 有的玩家不公开信息，会导致报错，待补充，方案是跳过不公开玩家。
 
 # 全局参数
 jsfile_name = ''
 Is_updated = 'False'
 is_ch = 0  # 是否一开始启用cookie（能获得中文基本信息）
-cookie_str = r'_ga=GA1.2.2063324720.1677846916; browserid=3120474609224450543; sessionid=6a93ee105e361d0735ff4135; timezoneOffset=28800,0; OUTFOX_SEARCH_USER_ID_NCOO=1402550032.5667572; deep_dive_carousel_method=default; steamCountry=HK|19912a30945f79648adec37bccaff724; strResponsiveViewPrefs=touch; birthtime=882028801; lastagecheckage=14-0-1998; Steam_Language=schinese; _gid=GA1.2.449215173.1683065095; _gac_UA-33786258-1=1.1683065095.Cj0KCQjw6cKiBhD5ARIsAKXUdyYmGPm6UanUhPxqtSMX0WvR_-oZgmtF_OUsnkib_5edmmITjwXSR-gaAtW9EALw_wcB; _gac_UA-222097716-1=1.1683065095.Cj0KCQjw6cKiBhD5ARIsAKXUdyYmGPm6UanUhPxqtSMX0WvR_-oZgmtF_OUsnkib_5edmmITjwXSR-gaAtW9EALw_wcB; ak_bmsc=9E0FFFCE49BBA82F2F378DF686E5CFA2~000000000000000000000000000000~YAAQV1DGy0v8SMaHAQAAcGx/3hNWLahi5LW60aEyl5/oWUNWA1np0JCBdYksN8J3YK4Leo0+7jf+EYGOY0DdSq060IVeungzZVYlTeziq3kA9/276RppXL1siyNrF8DUO4jxpcTnI4l8wCSPW1Mg2QoH+EgPrzKl/4tLNT2OjUWk0mpyOeV56BKZNiZer6KsvzmStM55dkd+KAQ/EsDUcWl+FHDmX7LLQc2Rt3B6XJVS8EDrT08Mk/NxlGptpt6mWbex5mwOZ30Ofq9UtWChytEzNR86Yaf6fWmhkeT8SgjmvKRdYWOCd7DA95C6wDB6pixDiNv59HkH5N8UAp9kE2A7vf2m5WTJfxcZbYDYDGINH6EAbwyJ3EQjiyfngrZCrmx5vEotL2w=; deep_dive_carousel_focused_app=674930; ___rl__test__cookies=1683066630776; bm_sv=CA2276B893F6C64B5B5945EC8D95B178~YAAQfjArF0hVO86HAQAAr3mo3hMbqG4mvm/k01ggjLOPzAbysc01szRoFnmv03WsGXjqBKGclwg0lpsrlu1GlauWBJBUMDICJhT1L5C0k80MIjbuoVUgxkVqvyye4tUo05NT//rFi2f6uN2BWAlp8ASXGavYBHJqQ51HuMc1ZSWDqLn7yBkJQ8dykyeEiPGZC+hBTuNQ17e80yFNPCkgJeLMx3Cr4HZ/NYlJH1967YJo28HgNONGq6AJzT6Rt3camsLw8Kyo~1; _gat_app=1; app_impressions=1619210@1_7_7_151_150_1|1224230@1_7_7_151_150_1|1101870@1_7_7_151_150_1|721180@1_7_7_151_150_1|1209770@1_7_7_151_150_1|1311700@1_7_7_151_150_1|2150830@1_7_7_151_150_1|1323540@1_7_7_151_150_1|614582@1_7_7_151_150_1|1790370@1_7_7_151_150_1|606971@1_7_7_151_150_1|2095300@1_7_7_151_150_1|1222140@1_7_7_151_150_1|2218230@1_7_7_151_150_1|2263670@1_7_7_151_150_1|1236420@1_7_7_151_150_1|1607540@1_7_7_151_150_1|960910@1_5_9__412|960990@1_5_9__412|1222140@1_5_9__412|1774580@1_5_9__300_6|1091500@1_5_9__300_5|1174180@1_5_9__300_4|1888930@1_5_9__300_3|1057090@1_5_9__300_2|292030@1_5_9__300_1; recentapps={"292030":1683068083,"1222140":1683068055,"2150830":1683068041,"513710":1683065092,"2058190":1682894811,"1948280":1682894289,"381210":1682891334,"846470":1682890077,"322330":1682888070,"1687950":1682885222}'
+cookie_str = r'_ga=GA1.2.2063324720.1677846916; browserid=3120474609224450543; sessionid=6a93ee105e361d0735ff4135; timezoneOffset=28800,0; OUTFOX_SEARCH_USER_ID_NCOO=1402550032.5667572; deep_dive_carousel_method=default; strResponsiveViewPrefs=touch; birthtime=882028801; lastagecheckage=14-0-1998; Steam_Language=schinese; _gid=GA1.2.449215173.1683065095; _gac_UA-33786258-1=1.1683065095.Cj0KCQjw6cKiBhD5ARIsAKXUdyYmGPm6UanUhPxqtSMX0WvR_-oZgmtF_OUsnkib_5edmmITjwXSR-gaAtW9EALw_wcB; _gac_UA-222097716-1=1.1683065095.Cj0KCQjw6cKiBhD5ARIsAKXUdyYmGPm6UanUhPxqtSMX0WvR_-oZgmtF_OUsnkib_5edmmITjwXSR-gaAtW9EALw_wcB; deep_dive_carousel_focused_app=674930; ___rl__test__cookies=1683066630776; steamCountry=CA|05c2b34bee0cbb2db68db3574e5f606b; steamLoginSecure=76561198188651006||eyAidHlwIjogIkpXVCIsICJhbGciOiAiRWREU0EiIH0.eyAiaXNzIjogInI6MEQxOV8yMjdCNDA4RF80OUIzMyIsICJzdWIiOiAiNzY1NjExOTgxODg2NTEwMDYiLCAiYXVkIjogWyAid2ViIiBdLCAiZXhwIjogMTY4MzIyMzcxMCwgIm5iZiI6IDE2NzQ0OTY1MDMsICJpYXQiOiAxNjgzMTM2NTAzLCAianRpIjogIjBEMjFfMjI3QjQwN0VfNEUzMTgiLCAib2F0IjogMTY4MzEzNjUwMywgInJ0X2V4cCI6IDE3MDEyNzMzMzksICJwZXIiOiAwLCAiaXBfc3ViamVjdCI6ICIxMzguMTk3LjE2OS4xNzYiLCAiaXBfY29uZmlybWVyIjogIjEzOC4xOTcuMTY5LjE3NiIgfQ.mxL-3fzQ1JgLYRbiq4Lf2m_w4bTMA9YaHLG9qEdY0XKuCRoWlwzYeQ19pjuOhCRNUy64DldRndjRg_3N1ES6Ag; app_impressions=2233020@1_7_15__13|1968570@1_7_15__13|1140440@1_7_15__13|1508300@1_7_15__13|1150690@1_7_15__13|1360210@1_7_15__13|2189420@1_7_7_151_150_1|1520850@1_7_7_151_150_1|2181640@1_7_7_151_150_1|2379730@1_7_7_151_150_1|1311700@1_7_7_151_150_1|2278640@1_7_7_151_150_1|1360210@1_7_7_151_150_1|1508300@1_7_7_151_150_1|1150690@1_7_7_151_150_1|1508300@1_5_9__405|1150690@1_5_9__412|1508300@1_5_9__412|568220@1_5_9__300_6|1288310@1_5_9__300_5|367520@1_5_9__300_4|2231450@1_5_9__300_3|420530@1_5_9__300_2|1256670@1_5_9__300_1|2189420@1_7_7_151_150_1|1520850@1_7_7_151_150_1|2181640@1_7_7_151_150_1|2379730@1_7_7_151_150_1|1311700@1_7_7_151_150_1|2278640@1_7_7_151_150_1|1360210@1_7_7_151_150_1|1508300@1_7_7_151_150_1|1150690@1_7_7_151_150_1|1954520@1_7_7_151_150_1|1811740@1_5_9__412|465100@1_5_9__412|1275730@1_5_9__405|1037120@1_5_9__412; recentapps={"736260":1683145568,"893850":1683145204,"718670":1683086398,"1150690":1683076608,"1839810":1683076320,"1948280":1683076012,"292030":1683070651,"1222140":1683070480,"2150830":1683068041,"513710":1683065092}'
 game_name = ''
 flag = 0
 n2 = 0
 cur_dir = "c:\\Users\\Lenovo\\Desktop"
 flag_bytes = 0
+tag_list = ''
 proxies = {
-    'http':'http://127.0.0.1:10809',
-    'https':'http://127.0.0.1:10809'
+    'http': 'http://127.0.0.1:10809',
+    'https': 'http://127.0.0.1:10809'
 }
 trans_tag = {
     'n': '普通名词',
@@ -146,13 +150,24 @@ achievement = {
     'achievement_desc': 'Achievement_desc',  # 成就描述
     'achievement_percentage': 'Achievement_percentage'  # 全球达成比
 }
-
 achievement_list = []
+
+# User Games
+User_Games = {
+    'steamid': 'steamid',  # 用户名
+    'gamename': 'gamename',  # 游戏名
+    'appid': 'gameid',  # appid
+    'gametime_recent_2_weeks': 'gametime_recent',  # 游戏最近两周时长
+    'gametime': 'gametime',  # 游戏总时长（暂不考虑游戏最近时长、最近游戏）
+    'gametags': 'gametags'  # 游戏标签
+}
+User_Games_list = []
 
 # 停用词列表(筛选词云生成)
 stopwords = ['还是', '是', '一种', '等', '游戏', '就是', '一个', '这样', 'sb', '骚逼', '头像', '点数', 'Steam点数',
              'Steam 点数',
-             '牛子', '如果', '觉得', '什么', '一下', '这个', '一款', '遊戯', 'game', 'really', 'now', 'right', 'the', 'and',
+             '牛子', '如果', '觉得', '什么', '一下', '这个', '一款', '遊戯', 'game', 'really', 'now', 'right', 'the',
+             'and',
              'it', 'so', 'to', 'you', 'of', 'this', 'in', 'on', 'that', 'there', 'for', 'are', 'as', 'was', 'at',
              'This', 'just', 'an', 'way', 'will', 'games', 'play', 'playing', 'https', 'url', 'tmd', 'h1', '可以']
 # WorldCloud自带stopword功能。
@@ -181,34 +196,37 @@ def word_cloud(img, commentcloud):
     sentence = sentence.replace('  ', '')
     jieba.enable_paddle()
     seg_list = jieba.cut('.'.join(commentcloud), cut_all=False, use_paddle=True)  # 精确模式
+    seg_tag_list = jieba.cut(tag_list, cut_all=False)  # 精确模式
     seg_list_tag = pseg.cut(sentence, use_paddle=True)
     # print(seg_list_tag)
     for word, flag in seg_list_tag:
-        #if flag != 'w' and len(word) > 1:
-            #print('%s %s' % (word, trans_tag[flag]))
-        if  len(word) > 1 and word not in stopwords:
+        # if flag != 'w' and len(word) > 1:
+        # print('%s %s' % (word, trans_tag[flag]))
+        if len(word) > 1 and word not in stopwords:
             if trans_tag_group[flag] == '时量地':
-                list_shiliangdi.append(word.replace(' ',''))
-                #print('%s' % word)
+                list_shiliangdi.append(word.replace(' ', ''))
+                # print('%s' % word)
             elif trans_tag_group[flag] == '专名':
-                list_zhuanming.append(word.replace(' ',''))
+                list_zhuanming.append(word.replace(' ', ''))
 
             elif trans_tag_group[flag] == '名词':
                 list_mingci.append(word.replace(' ', ''))
 
             elif trans_tag_group[flag] == '动词':
-                list_dongci.append(word.replace(' ',''))
+                list_dongci.append(word.replace(' ', ''))
 
             elif trans_tag_group[flag] == '形容词':
-                list_xingrongci.append(word.replace(' ',''))
+                list_xingrongci.append(word.replace(' ', ''))
     shiliangdi = ' '.join(list_shiliangdi)
     zhuanming = ' '.join(list_zhuanming)
     dongci = ' '.join(list_dongci)
     xingrongci = ' '.join(list_xingrongci)
     mingci = ' '.join(list_mingci)
     words_filtered = [word for word in seg_list if word not in stopwords and len(word) > 1]
+    words_tag_list_filtered = [word for word in seg_tag_list if word not in stopwords and len(word) > 1]
     # print(words_filtered)
     words = ' '.join(words_filtered)
+    words_tag = ' '.join(words_tag_list_filtered)
     # print(words)
     word_count = {}
     for word in words_filtered:
@@ -234,12 +252,16 @@ def word_cloud(img, commentcloud):
     wc = wordcloud.WordCloud(mask=img[0], font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
                              width=1000, height=500,
                              background_color='white').generate(words)
+    wc_tag_list = wordcloud.WordCloud(mask=img[0],
+                                      font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
+                                      width=1000, height=500,
+                                      background_color='white').generate(words_tag)
     wc_adj = wordcloud.WordCloud(mask=img[3], font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
-                             width=1000, height=500,
-                             background_color='white').generate(xingrongci)
-    wc_zn = wordcloud.WordCloud(mask=img[2], font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
                                  width=1000, height=500,
-                                 background_color='white').generate(zhuanming)
+                                 background_color='white').generate(xingrongci)
+    wc_zn = wordcloud.WordCloud(mask=img[2], font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
+                                width=1000, height=500,
+                                background_color='white').generate(zhuanming)
     wc_n = wordcloud.WordCloud(mask=img[1], font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
                                width=1000, height=500,
                                background_color='white').generate(mingci)
@@ -262,6 +284,8 @@ def word_cloud(img, commentcloud):
     print("专名Wordcloud已保存")
     wc_t.to_file('wordcloud_t.png')
     print("状语Wordcloud已保存")
+    wc_tag_list.to_file('wordcloud_tag_list.png')
+    print("玩家游戏标签Wordcloud已保存")
     # print(word_count)
     plt.imshow(wc)
     plt.axis("off")
@@ -365,8 +389,9 @@ def get_game_achieve(appid):
     print("Achievements后处理已完成，请查看" + game_name + '-' + AppID + '-achievements_post.csv CSV文件')
 
 
-def auto_login(url, cookie_str):
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf8')
+def auto_login(url, cookie_str, mode=0):
+    if (mode == 0):
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf8')
     url = url
     cookies = {}
     for line in cookie_str.split(';'):
@@ -374,7 +399,7 @@ def auto_login(url, cookie_str):
         cookies[key] = value
     headers = {
         'User-agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36'}
-    r = requests.get(url, headers=headers, cookies=cookies, proxies=proxies)
+    r = requests.get(url, headers=headers, cookies=cookies, proxies=proxies, timeout=8)
     html = r.content.decode('utf-8', 'ignore')
     # html.replace('en', 'zh-cn')
     page = BeautifulSoup(html, 'lxml')
@@ -513,7 +538,7 @@ def get_basic_gameinfo(appid):
 def post_process():
     # with Python中的上下文管理器，会帮我们释放资源，比如 关闭文件句柄
     # open 函数为Python内建的文件读取函数，r代表只读
-
+    global tag_list
     ## Summary后期处理
     with open(game_name + '-' + AppID + '-summary.json', 'r', encoding='utf8') as f:
         # 解析一个有效的JSON字符串并将其转换为Python字典
@@ -566,6 +591,8 @@ def post_process():
         data = json.loads(f.read())
     author_data_title = [*data[0]['author']]
     output2 = ','.join(author_data_title)
+    output2 += ',top10_games'
+    output2 += ',top3_game_tags'
     output2 += ','.join([*data[0]])
     output2 += ',review_length'
     output2 += ',review_updated'  # 评论是否更新过
@@ -603,9 +630,19 @@ def post_process():
             commentcloud.append(obj["review"])
             output2 += f'\n'
             # 将结果转化为字符串，累加到output中
+            tag_list_temp = ''
+            App_list = ''
             for obj2 in author_data:
+                steamid = obj2["steamid"]
+                if float(obj["weighted_vote_score"]) > 0.8:  # 只获取高质量评论的玩家详细数据
+                    App_list, tag_list_temp = get_user_games(steamid)
+                    App_list = ';'.join(App_list)
+
+                    #for game in User_Games_list:
+                        #tag_list_temp = ';'.join(str(game['gametags']))
+                    #tag_list += ';'.join(str(tag_list_temp))
                 last_played = readable_unixtime(obj2["last_played"])
-                output2 += f'{obj2["steamid"]},{obj2["num_games_owned"]},{obj2["num_reviews"]},{obj2["playtime_forever"]},{obj2["playtime_last_two_weeks"]},{obj2["playtime_at_review"]},%s' % str(
+                output2 += f'{obj2["steamid"]},{obj2["num_games_owned"]},{obj2["num_reviews"]},{obj2["playtime_forever"]},{obj2["playtime_last_two_weeks"]},{obj2["playtime_at_review"]},%s,{App_list},{tag_list_temp}' % str(
                     last_played)
             review_fix = str(obj["review"]).replace(',', '，')
             # f 为f-string格式化，将大括号中的表达式替代
@@ -700,7 +737,8 @@ def print_hi(name):
 
 def get_reviews(appid, params):
     url = 'https://store.steampowered.com/appreviews/'
-    response = requests.get(url=url + str(appid) + '?json=1', params=params, headers={'User-Agent': 'Mozilla/5.0'}, proxies=proxies)
+    response = requests.get(url=url + str(appid) + '?json=1', params=params, headers={'User-Agent': 'Mozilla/5.0'},
+                            proxies=proxies)
     return response.json()
 
 
@@ -913,6 +951,87 @@ def word_cloud_process(jsfile):
         f.write(output2)
     print("Reviews后处理已完成，请查看" + jsfile_name + '-reviews_post2.csv CSV文件')
     return commentcloud
+
+
+def get_user_games(steamid):
+    global User_Games
+    global User_Games_list
+    global tag_list
+    #User_Games = {}
+    User_Games_list = []
+    AppName_list = []
+    tag_temp = ''
+    game_num = 11  # 设置读取每个玩家游戏库前十的游戏数据
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Mobile Safari/537.36'}
+    url = "https://steamcommunity.com/profiles/"
+    r = requests.get(url=url + str(steamid) + '/games?tab=all&xml=1', headers=headers, proxies=proxies)
+    xml_data = r.content.decode('utf-8', 'ignore')
+    # html.replace('en', 'zh-cn')
+    page = BeautifulSoup(xml_data, 'lxml-xml')
+    # print(page.prettify())
+    for tag in page.find_all('steamID'):
+        User_Games['steamid'] = tag.get_text()
+    for tag in page.find_all('game'):
+        game_num = game_num - 1
+        if game_num <= 0:
+            break
+        for appid in tag.find_all('appID'):
+            User_Games['appid'] = appid.get_text()
+            if game_num >= 8:
+                gametags = get_game_tags(appid.get_text())
+                User_Games['gametags'] = gametags
+                tag_temp += gametags
+            else:
+                User_Games['gametags'] = ''
+        for name in tag.find_all('name'):
+            User_Games['gamename'] = name.get_text()
+        for hoursLast2Weeks in tag.find_all('hoursLast2Weeks'):
+            User_Games['gametime_recent_2_weeks'] = hoursLast2Weeks.get_text()
+        for hoursOnRecord in tag.find_all('hoursOnRecord'):
+            User_Games['gametime'] = hoursOnRecord.get_text()
+        User_Games_list.append(User_Games.copy())
+        if len(User_Games_list) != 0:
+            AppName_list.append(
+                User_Games['gamename'] + '(' + User_Games['gametime_recent_2_weeks'] + 'h/' + User_Games[
+                    'gametime'] + 'h)')
+        # print(tag)
+    if len(User_Games_list) == 0:
+        AppName_list = ['未公开']
+        tag_temp = '未公开'
+    else:
+        tag_list += tag_temp
+    print(User_Games_list)
+
+    return AppName_list, tag_temp
+
+
+def get_game_tags(appid):
+    gametags_list = []
+    gametags = ''
+    global is_ch
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Mobile Safari/537.36'}
+    url = "https://store.steampowered.com/app/"
+    r = requests.get(url=url + str(appid), headers=headers, proxies=proxies)
+    html = r.content.decode('utf-8', 'ignore')
+    # html.replace('en', 'zh-cn')
+    page = BeautifulSoup(html, 'lxml')
+    # print(page.prettify())
+    for tag in page.select('#view_product_page_btn > span'):
+        if tag.get_text() == 'View Page' or is_ch == 1:
+            page = auto_login(url + str(appid) + '_/', cookie_str, 1)
+            # exit()
+    for tag in page.find_all('a', class_='app_tag'):
+        # print(tag)
+        tag_temp = tag.get_text().replace('\r\n', '')
+        tag_temp = tag_temp.replace('\t', '')
+        gametags_list.append(tag_temp)
+    # print(tag_list)
+    gametags = ";".join(gametags_list)
+    # for a in tag_list:
+    # print(a)
+    return gametags
 
 
 # 按间距中的绿色按钮以运行脚本。
