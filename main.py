@@ -152,7 +152,7 @@ achievement_list = []
 # 停用词列表(筛选词云生成)
 stopwords = ['还是', '是', '一种', '等', '游戏', '就是', '一个', '这样', 'sb', '骚逼', '头像', '点数', 'Steam点数',
              'Steam 点数',
-             '牛子', '如果', '觉得', '什么', '一下', '这个', '遊戯', 'game', 'really', 'now', 'right', 'the', 'and',
+             '牛子', '如果', '觉得', '什么', '一下', '这个', '一款', '遊戯', 'game', 'really', 'now', 'right', 'the', 'and',
              'it', 'so', 'to', 'you', 'of', 'this', 'in', 'on', 'that', 'there', 'for', 'are', 'as', 'was', 'at',
              'This', 'just', 'an', 'way', 'will', 'games', 'play', 'playing', 'https', 'url', 'tmd', 'h1', '可以']
 # WorldCloud自带stopword功能。
@@ -173,7 +173,6 @@ def word_cloud(img, commentcloud):
     global list_shiliangdi
     global list_dongci
     global list_mingci
-    pic = img
     sentence = '.'.join(commentcloud).replace('，', ',')
     sentence = sentence.replace('。', '.')
     sentence = sentence.replace('：', ':')
@@ -232,22 +231,22 @@ def word_cloud(img, commentcloud):
         print("Wordcloud后处理已完成，请查看" + game_name + '-' + AppID + '-wordcloud_post.csv CSV文件')
     # print(word, count)
     # 保存
-    wc = wordcloud.WordCloud(mask=pic, font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
+    wc = wordcloud.WordCloud(mask=img[0], font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
                              width=1000, height=500,
                              background_color='white').generate(words)
-    wc_adj = wordcloud.WordCloud(mask=pic, font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
+    wc_adj = wordcloud.WordCloud(mask=img[3], font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
                              width=1000, height=500,
                              background_color='white').generate(xingrongci)
-    wc_zn = wordcloud.WordCloud(mask=pic, font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
+    wc_zn = wordcloud.WordCloud(mask=img[2], font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
                                  width=1000, height=500,
                                  background_color='white').generate(zhuanming)
-    wc_n = wordcloud.WordCloud(mask=pic, font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
+    wc_n = wordcloud.WordCloud(mask=img[1], font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
                                width=1000, height=500,
                                background_color='white').generate(mingci)
-    wc_v = wordcloud.WordCloud(mask=pic, font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
+    wc_v = wordcloud.WordCloud(mask=img[4], font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
                                width=1000, height=500,
                                background_color='white').generate(dongci)
-    wc_t = wordcloud.WordCloud(mask=pic, font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
+    wc_t = wordcloud.WordCloud(mask=img[5], font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
                                width=1000, height=500,
                                background_color='white').generate(shiliangdi)
     # print(words)
@@ -920,9 +919,15 @@ def word_cloud_process(jsfile):
 if __name__ == '__main__':
     # print_hi('PySteam')
     commentcloud = []
+    img = []
     # 词云遮罩，白色部分不绘制
     # img = mpimg.imread('steam~1.png')
-    img = np.array(Image.open('steam3.png'))
+    img.append(np.array(Image.open('steam3.png')))
+    img.append(np.array(Image.open('n-mask.png')))
+    img.append(np.array(Image.open('zn-mask.png')))
+    img.append(np.array(Image.open('adj-mask.png')))
+    img.append(np.array(Image.open('v-mask.png')))
+    img.append(np.array(Image.open('t-mask.png')))
     # print(img) #保证留白是255,255,255
     # img = plt.imread('steam3.png')
     # img = np.array(imageio.imread('steam.jpg'))
