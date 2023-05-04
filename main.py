@@ -32,7 +32,7 @@ import main
 # 如果词云里有重复词语，可能是因为相同词语连续大量出现(刷评论)，可以人工清洗再分析词云。
 # python3.7联网注意加代理。
 # 默认读取每个玩家游戏库前三的游戏标签数据（读取一个用户下的一个游戏标签数据要4s左右），前十的游戏名。
-# 有的玩家不公开信息，会导致报错，方案是跳过不公开玩家。bug:全部报无游戏
+# 有的玩家不公开信息，会导致报错，方案是跳过不公开玩家。
 
 # 全局参数
 jsfile_name = ''
@@ -47,7 +47,7 @@ flag_bytes = 0
 tag_list = ''
 tag_list_positive = ''
 tag_list_negative = ''
-filter_by_weight_core = 0.6  # 评论权重高于此值则开始获取其玩家profile
+filter_by_weight_core = 0.7  # 评论权重高于此值则开始获取其玩家profile
 game_num_fix = 11  # 设置读取每个玩家profile游戏库前十的游戏数据（注意+1）（而且似乎不是按游戏时长排序。。）
 game_num = game_num_fix
 game_tag_num = 3  # 设置读取每个玩家profile游戏库中每个游戏的tag数据，此处为只读取前3个游戏
@@ -214,7 +214,7 @@ def word_cloud(img, commentcloud):
                                           width=1000, height=500,
                                           background_color='white').generate(words_tag)
         wc_tag_list.to_file('wordcloud_tag_list.png')
-        print("玩家游戏标签Wordcloud已保存")
+        print("玩家游戏标签wordcloud_tag_list已保存")
 
     if len(tag_list_positive) > 0:
         tag_list_positive = tag_list_positive.replace(' ', '-')
@@ -226,7 +226,7 @@ def word_cloud(img, commentcloud):
                                               width=1000, height=500,
                                               background_color='white').generate(words_tag_pos)
         wc_tag_list_pos.to_file('wordcloud_tag_list_positive.png')
-        print("推荐玩家游戏标签Wordcloud_positive已保存")
+        print("推荐玩家游戏标签wordcloud_tag_list_positive已保存")
 
     if len(tag_list_negative) > 0:
         tag_list_negative = tag_list_negative.replace(' ', '-')
@@ -238,7 +238,7 @@ def word_cloud(img, commentcloud):
                                               width=1000, height=500,
                                               background_color='white').generate(words_tag_neg)
         wc_tag_list_neg.to_file('wordcloud_tag_list_negative.png')
-        print("不推荐玩家游戏标签Wordcloud_negative已保存")
+        print("不推荐玩家游戏标签wordcloud_tag_list_negative已保存")
 
     if len(list_positive) > 0:
         list_positive = list_positive.replace(' ', '-')
@@ -713,11 +713,11 @@ def post_process():
                     if code == 1:
                         App_list = ';'.join(App_list)
                     if code == 0:
+                        App_list = ';'.join(App_list)  # 这里本想做一个 无游戏/不公开 与 公开 的区分的
                         pass
-                    #print(App_list)
-                    #print(tag_list_temp)
-                    output2 += f'{obj2["steamid"]},{obj2["num_games_owned"]},{obj2["num_reviews"]},{obj2["playtime_forever"]},{obj2["playtime_last_two_weeks"]},{obj2["playtime_at_review"]},%s,{App_list},{tag_list_temp}' % str(
-                        last_played)
+                    # print(App_list)
+                    # print(tag_list_temp)
+
                 output2 += f'{obj2["steamid"]},{obj2["num_games_owned"]},{obj2["num_reviews"]},{obj2["playtime_forever"]},{obj2["playtime_last_two_weeks"]},{obj2["playtime_at_review"]},%s,{App_list},{tag_list_temp}' % str(
                     last_played)
                 if obj["voted_up"]:
