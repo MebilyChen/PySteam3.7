@@ -18,7 +18,7 @@ import jieba.posseg as pseg
 import wordcloud
 from matplotlib import image as mpimg, pyplot as plt
 from PIL import Image
-
+from tqdm import tqdm
 import main
 
 # coding: utf-8
@@ -32,7 +32,7 @@ import main
 # 如果词云里有重复词语，可能是因为相同词语连续大量出现(刷评论)，可以人工清洗再分析词云。
 # python3.7联网注意加代理。
 # 默认读取每个玩家游戏库前三的游戏标签数据（读取一个用户下的一个游戏标签数据要4s左右），前十的游戏名。
-# 有的玩家不公开信息，会导致报错，待补充，方案是跳过不公开玩家。
+# 有的玩家不公开信息，会导致报错，方案是跳过不公开玩家。bug:全部报无游戏
 
 # 全局参数
 jsfile_name = ''
@@ -45,6 +45,12 @@ n2 = 0
 cur_dir = "c:\\Users\\Lenovo\\Desktop"
 flag_bytes = 0
 tag_list = ''
+tag_list_positive = ''
+tag_list_negative = ''
+filter_by_weight_core = 0.6  # 评论权重高于此值则开始获取其玩家profile
+game_num_fix = 11  # 设置读取每个玩家profile游戏库前十的游戏数据（注意+1）（而且似乎不是按游戏时长排序。。）
+game_num = game_num_fix
+game_tag_num = 3  # 设置读取每个玩家profile游戏库中每个游戏的tag数据，此处为只读取前3个游戏
 proxies = {
     'http': 'http://127.0.0.1:10809',
     'https': 'http://127.0.0.1:10809'
@@ -117,6 +123,9 @@ list_dongci = []
 list_xingrongci = []
 list_mingci = []
 
+list_positive = ''
+list_negative = ''
+
 params = {
     'json': 1,
     'filter': 'recent',
@@ -183,20 +192,79 @@ filterwords = ['牛子', 'steam点数', 'Steam 点数', '请奖励这条评论',
 def word_cloud(img, commentcloud):
     global is_ch
     global jsfile_name
-    global list_xingrongci
-    global list_zhuanming
-    global list_shiliangdi
-    global list_dongci
-    global list_mingci
+    global list_xingrongci, list_zhuanming, list_shiliangdi, list_dongci, list_mingci
+    global tag_list
+    global tag_list_positive, tag_list_negative
+    global list_negative, list_positive
     sentence = '.'.join(commentcloud).replace('，', ',')
     sentence = sentence.replace('。', '.')
     sentence = sentence.replace('：', ':')
     sentence = sentence.replace('“', '"')
     sentence = sentence.replace('”', '"')
     sentence = sentence.replace('  ', '')
+
     jieba.enable_paddle()
+    if len(tag_list) > 0:
+        tag_list = tag_list.replace(' ', '-')
+        seg_tag_list = jieba.cut(tag_list, cut_all=False)  # 精确模式
+        words_tag_list_filtered = [word for word in seg_tag_list if word not in stopwords and len(word) > 1]
+        words_tag = ' '.join(words_tag_list_filtered)
+        wc_tag_list = wordcloud.WordCloud(mask=img[0],
+                                          font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
+                                          width=1000, height=500,
+                                          background_color='white').generate(words_tag)
+        wc_tag_list.to_file('wordcloud_tag_list.png')
+        print("玩家游戏标签Wordcloud已保存")
+
+    if len(tag_list_positive) > 0:
+        tag_list_positive = tag_list_positive.replace(' ', '-')
+        seg_tag_list_pos = jieba.cut(tag_list_positive, cut_all=False)  # 精确模式
+        words_tag_list_pos_filtered = [word for word in seg_tag_list_pos if word not in stopwords and len(word) > 1]
+        words_tag_pos = ' '.join(words_tag_list_pos_filtered)
+        wc_tag_list_pos = wordcloud.WordCloud(mask=img[6],
+                                              font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
+                                              width=1000, height=500,
+                                              background_color='white').generate(words_tag_pos)
+        wc_tag_list_pos.to_file('wordcloud_tag_list_positive.png')
+        print("推荐玩家游戏标签Wordcloud_positive已保存")
+
+    if len(tag_list_negative) > 0:
+        tag_list_negative = tag_list_negative.replace(' ', '-')
+        seg_tag_list_neg = jieba.cut(tag_list_negative, cut_all=False)  # 精确模式
+        words_tag_list_neg_filtered = [word for word in seg_tag_list_neg if word not in stopwords and len(word) > 1]
+        words_tag_neg = ' '.join(words_tag_list_neg_filtered)
+        wc_tag_list_neg = wordcloud.WordCloud(mask=img[7],
+                                              font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
+                                              width=1000, height=500,
+                                              background_color='white').generate(words_tag_neg)
+        wc_tag_list_neg.to_file('wordcloud_tag_list_negative.png')
+        print("不推荐玩家游戏标签Wordcloud_negative已保存")
+
+    if len(list_positive) > 0:
+        list_positive = list_positive.replace(' ', '-')
+        seg_list_pos = jieba.cut(list_positive, cut_all=False)  # 精确模式
+        words_list_pos_filtered = [word for word in seg_list_pos if word not in stopwords and len(word) > 1]
+        words_pos = ' '.join(words_list_pos_filtered)
+        wc_list_pos = wordcloud.WordCloud(mask=img[6],
+                                          font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
+                                          width=1000, height=500,
+                                          background_color='white').generate(words_pos)
+        wc_list_pos.to_file('wordcloud_positive.png')
+        print("Wordcloud_positive已保存")
+
+    if len(list_negative) > 0:
+        list_negative = list_negative.replace(' ', '-')
+        seg_list_neg = jieba.cut(list_negative, cut_all=False)  # 精确模式
+        words_list_neg_filtered = [word for word in seg_list_neg if word not in stopwords and len(word) > 1]
+        words_neg = ' '.join(words_list_neg_filtered)
+        wc_list_neg = wordcloud.WordCloud(mask=img[7],
+                                          font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
+                                          width=1000, height=500,
+                                          background_color='white').generate(words_neg)
+        wc_list_neg.to_file('wordcloud_negative.png')
+        print("Wordcloud_negative已保存")
+
     seg_list = jieba.cut('.'.join(commentcloud), cut_all=False, use_paddle=True)  # 精确模式
-    seg_tag_list = jieba.cut(tag_list, cut_all=False)  # 精确模式
     seg_list_tag = pseg.cut(sentence, use_paddle=True)
     # print(seg_list_tag)
     for word, flag in seg_list_tag:
@@ -223,10 +291,9 @@ def word_cloud(img, commentcloud):
     xingrongci = ' '.join(list_xingrongci)
     mingci = ' '.join(list_mingci)
     words_filtered = [word for word in seg_list if word not in stopwords and len(word) > 1]
-    words_tag_list_filtered = [word for word in seg_tag_list if word not in stopwords and len(word) > 1]
+
     # print(words_filtered)
     words = ' '.join(words_filtered)
-    words_tag = ' '.join(words_tag_list_filtered)
     # print(words)
     word_count = {}
     for word in words_filtered:
@@ -252,40 +319,41 @@ def word_cloud(img, commentcloud):
     wc = wordcloud.WordCloud(mask=img[0], font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
                              width=1000, height=500,
                              background_color='white').generate(words)
-    wc_tag_list = wordcloud.WordCloud(mask=img[0],
-                                      font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
-                                      width=1000, height=500,
-                                      background_color='white').generate(words_tag)
-    wc_adj = wordcloud.WordCloud(mask=img[3], font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
-                                 width=1000, height=500,
-                                 background_color='white').generate(xingrongci)
-    wc_zn = wordcloud.WordCloud(mask=img[2], font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
-                                width=1000, height=500,
-                                background_color='white').generate(zhuanming)
-    wc_n = wordcloud.WordCloud(mask=img[1], font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
-                               width=1000, height=500,
-                               background_color='white').generate(mingci)
-    wc_v = wordcloud.WordCloud(mask=img[4], font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
-                               width=1000, height=500,
-                               background_color='white').generate(dongci)
-    wc_t = wordcloud.WordCloud(mask=img[5], font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
-                               width=1000, height=500,
-                               background_color='white').generate(shiliangdi)
+
+    if len(xingrongci) > 0:
+        wc_adj = wordcloud.WordCloud(mask=img[3], font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
+                                     width=1000, height=500,
+                                     background_color='white').generate(xingrongci)
+        wc_adj.to_file('wordcloud_adj.png')
+        print("形容词Wordcloud已保存")
+    if len(zhuanming) > 0:
+        wc_zn = wordcloud.WordCloud(mask=img[2], font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
+                                    width=1000, height=500,
+                                    background_color='white').generate(zhuanming)
+        wc_zn.to_file('wordcloud_zn.png')
+        print("专名Wordcloud已保存")
+    if len(mingci) > 0:
+        wc_n = wordcloud.WordCloud(mask=img[1], font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
+                                   width=1000, height=500,
+                                   background_color='white').generate(mingci)
+        wc_n.to_file('wordcloud_n.png')
+        print("名词Wordcloud已保存")
+    if len(dongci) > 0:
+        wc_v = wordcloud.WordCloud(mask=img[4], font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
+                                   width=1000, height=500,
+                                   background_color='white').generate(dongci)
+        wc_v.to_file('wordcloud_v.png')
+        print("动词Wordcloud已保存")
+    if len(shiliangdi) > 0:
+        wc_t = wordcloud.WordCloud(mask=img[5], font_path='C:\\Users\\Lenovo\\PycharmProjects\\pySteam\\STZHONGS.TTF',
+                                   width=1000, height=500,
+                                   background_color='white').generate(shiliangdi)
+        wc_t.to_file('wordcloud_t.png')
+        print("状语Wordcloud已保存")
     # print(words)
     wc.to_file('wordcloud.png')
     print("Wordcloud已保存")
-    wc_adj.to_file('wordcloud_adj.png')
-    print("形容词Wordcloud已保存")
-    wc_v.to_file('wordcloud_v.png')
-    print("动词Wordcloud已保存")
-    wc_n.to_file('wordcloud_n.png')
-    print("名词Wordcloud已保存")
-    wc_zn.to_file('wordcloud_zn.png')
-    print("专名Wordcloud已保存")
-    wc_t.to_file('wordcloud_t.png')
-    print("状语Wordcloud已保存")
-    wc_tag_list.to_file('wordcloud_tag_list.png')
-    print("玩家游戏标签Wordcloud已保存")
+
     # print(word_count)
     plt.imshow(wc)
     plt.axis("off")
@@ -538,7 +606,8 @@ def get_basic_gameinfo(appid):
 def post_process():
     # with Python中的上下文管理器，会帮我们释放资源，比如 关闭文件句柄
     # open 函数为Python内建的文件读取函数，r代表只读
-    global tag_list
+    global tag_list, game_num_fix, game_num, list_positive, list_negative
+    global filter_by_weight_core
     ## Summary后期处理
     with open(game_name + '-' + AppID + '-summary.json', 'r', encoding='utf8') as f:
         # 解析一个有效的JSON字符串并将其转换为Python字典
@@ -634,16 +703,30 @@ def post_process():
             App_list = ''
             for obj2 in author_data:
                 steamid = obj2["steamid"]
-                if float(obj["weighted_vote_score"]) > 0.8:  # 只获取高质量评论的玩家详细数据
-                    App_list, tag_list_temp = get_user_games(steamid)
-                    App_list = ';'.join(App_list)
-
-                    #for game in User_Games_list:
-                        #tag_list_temp = ';'.join(str(game['gametags']))
-                    #tag_list += ';'.join(str(tag_list_temp))
                 last_played = readable_unixtime(obj2["last_played"])
+                if float(obj["weighted_vote_score"]) >= filter_by_weight_core:  # 只获取高质量评论的玩家详细数据
+                    if obj2["num_games_owned"] <= game_num:
+                        game_num = obj2["num_games_owned"]
+                    else:
+                        game_num = game_num_fix
+                    App_list, tag_list_temp, code = get_user_games(steamid, obj["voted_up"])
+                    if code == 1:
+                        App_list = ';'.join(App_list)
+                    if code == 0:
+                        pass
+                    #print(App_list)
+                    #print(tag_list_temp)
+                    output2 += f'{obj2["steamid"]},{obj2["num_games_owned"]},{obj2["num_reviews"]},{obj2["playtime_forever"]},{obj2["playtime_last_two_weeks"]},{obj2["playtime_at_review"]},%s,{App_list},{tag_list_temp}' % str(
+                        last_played)
                 output2 += f'{obj2["steamid"]},{obj2["num_games_owned"]},{obj2["num_reviews"]},{obj2["playtime_forever"]},{obj2["playtime_last_two_weeks"]},{obj2["playtime_at_review"]},%s,{App_list},{tag_list_temp}' % str(
                     last_played)
+                if obj["voted_up"]:
+                    list_positive += str(obj["review"]).replace(',', '，') + ';'
+                else:
+                    list_negative += str(obj["review"]).replace(',', '，') + ';'
+                # for game in User_Games_list:
+                # tag_list_temp = ';'.join(str(game['gametags']))
+                # tag_list += ';'.join(str(tag_list_temp))
             review_fix = str(obj["review"]).replace(',', '，')
             # f 为f-string格式化，将大括号中的表达式替代
             output2 += f',{obj["recommendationid"]},{obj["language"]},{review_fix},%s,%s,{obj["voted_up"]},{obj["votes_up"]},{obj["votes_funny"]},{obj["weighted_vote_score"]},{obj["comment_count"]},{obj["steam_purchase"]},{obj["received_for_free"]},{obj["written_during_early_access"]},{obj["hidden_in_steam_china"]},{obj["steam_china_location"]},{review_len},{Is_updated},{timestamp_dev_responded},{developer_response}' % (
@@ -953,15 +1036,22 @@ def word_cloud_process(jsfile):
     return commentcloud
 
 
-def get_user_games(steamid):
+def get_user_games(steamid, vote):
     global User_Games
+    # global User_Games_template
     global User_Games_list
+    global tag_list_positive
+    global tag_list_negative
     global tag_list
-    #User_Games = {}
+    global game_num
+    global game_tag_num
+    # User_Games = User_Games_template
+    game_num_temp = game_num
+    code = 0
     User_Games_list = []
     AppName_list = []
     tag_temp = ''
-    game_num = 11  # 设置读取每个玩家游戏库前十的游戏数据
+    error_messeage = ''
     headers = {
         'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Mobile Safari/537.36'}
     url = "https://steamcommunity.com/profiles/"
@@ -972,38 +1062,54 @@ def get_user_games(steamid):
     # print(page.prettify())
     for tag in page.find_all('steamID'):
         User_Games['steamid'] = tag.get_text()
-    for tag in page.find_all('game'):
-        game_num = game_num - 1
-        if game_num <= 0:
-            break
-        for appid in tag.find_all('appID'):
-            User_Games['appid'] = appid.get_text()
-            if game_num >= 8:
-                gametags = get_game_tags(appid.get_text())
-                User_Games['gametags'] = gametags
-                tag_temp += gametags
-            else:
-                User_Games['gametags'] = ''
-        for name in tag.find_all('name'):
-            User_Games['gamename'] = name.get_text()
-        for hoursLast2Weeks in tag.find_all('hoursLast2Weeks'):
-            User_Games['gametime_recent_2_weeks'] = hoursLast2Weeks.get_text()
-        for hoursOnRecord in tag.find_all('hoursOnRecord'):
-            User_Games['gametime'] = hoursOnRecord.get_text()
-        User_Games_list.append(User_Games.copy())
-        if len(User_Games_list) != 0:
-            AppName_list.append(
-                User_Games['gamename'] + '(' + User_Games['gametime_recent_2_weeks'] + 'h/' + User_Games[
-                    'gametime'] + 'h)')
-        # print(tag)
-    if len(User_Games_list) == 0:
+    for error in page.find_all('error'):
+        error_messeage = error.get_text()
+    if error_messeage == 'This profile is private.':
         AppName_list = ['未公开']
         tag_temp = '未公开'
+        code = 0
     else:
-        tag_list += tag_temp
-    print(User_Games_list)
+        for tag in page.find_all('game'):
+            game_num_temp = game_num_temp - 1
+            if game_num_temp <= 0:
+                break
+            for appid in tag.find_all('appID'):
+                User_Games['appid'] = appid.get_text()
+                if game_num_temp >= game_num - game_tag_num:
+                    gametags = get_game_tags(appid.get_text())
+                    User_Games['gametags'] = gametags
+                    tag_temp += gametags
+                else:
+                    User_Games['gametags'] = ''
+            for name in tag.find_all('name'):
+                User_Games['gamename'] = name.get_text()
+            for hoursLast2Weeks in tag.find_all('hoursLast2Weeks'):
+                User_Games['gametime_recent_2_weeks'] = hoursLast2Weeks.get_text().replace(',', '')
+            for hoursOnRecord in tag.find_all('hoursOnRecord'):
+                User_Games['gametime'] = hoursOnRecord.get_text().replace(',', '')
+            User_Games_list.append(User_Games.copy())
+            # print(User_Games)
+            if len(User_Games_list) != 0:
+                AppName_list.append(
+                    User_Games['gamename'] + '(' + User_Games['gametime_recent_2_weeks'] + 'h/' + User_Games[
+                        'gametime'] + 'h)')
+                code = 1
+            else:
+                code = 0
+            # print(tag)
+        if len(User_Games_list) == 0:
+            AppName_list = ['无游戏']
+            tag_temp = '无游戏'
+            code = 0
+        else:
+            tag_list += tag_temp
+            if vote:
+                tag_list_positive += tag_temp
+            else:
+                tag_list_negative += tag_temp
+        # print(User_Games_list)
 
-    return AppName_list, tag_temp
+    return AppName_list, tag_temp, code
 
 
 def get_game_tags(appid):
@@ -1035,6 +1141,7 @@ def get_game_tags(appid):
 
 
 # 按间距中的绿色按钮以运行脚本。
+
 if __name__ == '__main__':
     # print_hi('PySteam')
     commentcloud = []
@@ -1047,6 +1154,8 @@ if __name__ == '__main__':
     img.append(np.array(Image.open('adj-mask.png')))
     img.append(np.array(Image.open('v-mask.png')))
     img.append(np.array(Image.open('t-mask.png')))
+    img.append(np.array(Image.open('upvote_mask.png')))
+    img.append(np.array(Image.open('downvote_mask.png')))
     # print(img) #保证留白是255,255,255
     # img = plt.imread('steam3.png')
     # img = np.array(imageio.imread('steam.jpg'))
